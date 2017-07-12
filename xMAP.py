@@ -1,3 +1,4 @@
+"""xMAP.py -- read xMAP netCDF files"""
 def read_netcdf(directory, f_name):
     """Read in a netcdf (.nc) file from disk and return the data contained
     in the form of a numpy structured array. 
