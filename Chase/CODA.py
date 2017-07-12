@@ -7,7 +7,7 @@ __email__ = "cwg45@cornell.edu"
 #imports
 import numpy as np
 from functools import *
-import lib_coincidence as lc
+import lib_coincidence
 
 #import joblib -- for parallelization
 #joblib isn't on CLASSE servers by default, so some trickery is required
@@ -74,6 +74,9 @@ scattered_first = args.scattered_first
 #########################################
 
 file_end+=1 #python loops are over the range [start, end)
+
+lc = lib_coincidence.Coincidence(directory, file_prefix, file_ext, time_window, time_offset,
+            fluor_channel, scattered_channel, ROI_begin, ROI_end, num_bins)
 
 def process_file(f_num):
     """Process one file according to the boolean parameter scattered_first"""
