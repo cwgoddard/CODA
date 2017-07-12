@@ -1,4 +1,10 @@
 """xMAP.py -- read xMAP netCDF files"""
+__author__ = "Chase Goddard"
+__email__ = "cwg45@cornell.edu"
+
+import numpy as np
+import scipy.netcdf as netcdf
+
 def read_netcdf(directory, f_name):
     """Read in a netcdf (.nc) file from disk and return the data contained
     in the form of a numpy structured array. 
