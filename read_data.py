@@ -1,9 +1,9 @@
-"""xMAP.py -- read xMAP netCDF files"""
-__author__ = "Chase Goddard"
-__email__ = "cwg45@cornell.edu"
+"""read_data.py -- read xMAP netCDF files and simulated data files"""
+__author__ = "Chase Goddard, Johnathan Kuan"
+__email__ = "cwg45@cornell.edu, jk2788@cornell.edu"
 
 import numpy as np
-import scipy.netcdf as netcdf
+import scipy.io.netcdf as netcdf
 
 def read_netcdf(directory, f_name):
     """Read in a netcdf (.nc) file from disk and return the data contained
@@ -60,3 +60,23 @@ def read_netcdf(directory, f_name):
     return np.array(list(zip(time, E, channel)),
             dtype = {'names':['time', 'E', 'channel'],
             'formats':['float64', 'int32', 'int32']})
+
+def read_csv(file):
+"""Read csv file containing simulation and get data"""
+
+    time = []
+    energy = []
+    channel = []
+
+    with open(file, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            time.append(float(row[0]))
+            energy.append(int(float(row[1])))
+            channel.append(int(row[2]))
+
+    return np.array(list(zip(time, energy, channel)), 
+                    dtype = {'names':['time', 'E', 'channel'],
+                    'formats':['float64', 'int32', 'int32']})
+
+
