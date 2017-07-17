@@ -70,7 +70,7 @@ def read_netcdf(directory, f_name):
     The result is a structured array, so (e.g.) Energy data can be accessed by
     result['E']. The same holds for other columns of the data"""
     
-    f = netcdf.netcdf_file(directory+f_name, 'r', mmap=False) #Load in netcdf file
+    f = netcdf.netcdf_file(directory+f_name, 'r', mmap=False) #Load netcdf file
     tmp_data = f.variables['array_data'] #get relevant data
     data = tmp_data[:].copy().astype('uint16') #copy data into memory from disk
     f.close() #close netcdf file

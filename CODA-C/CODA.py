@@ -136,7 +136,8 @@ def write_log():
     f.write('Runtime parameters: \n')
     f.write('time bin: ' + '{:.3e}'.format(time_window) + '\n')
     #f.write('time offset: ' + '{:.3e}'.format(time_offset) + '\n')
-    f.write('fluorescence region: [' + str(ROI_begin) + ',' + str(ROI_end) + ']\n')
+    f.write('fluorescence region: [' + str(ROI_begin) + ',' + str(ROI_end) +
+            ']\n')
     f.write('scattered channel: ' + str(scattered_channel) + '\n')
     f.write('fluorescence channel: ' + str(fluor_channel) + '\n')
     f.write('number of histogram bins: ' + str(num_bins) + '\n')

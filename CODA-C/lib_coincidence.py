@@ -14,8 +14,9 @@ import read_data
 
 class Coincidence:
     """functions for coincidence/acoincidence calculation"""
-    def __init__(self, directory, file_prefix, file_ext, time_window, time_offset, fluor_channel,
-            scattered_channel, ROI_begin, ROI_end, num_bins, evt_offset):
+    def __init__(self, directory, file_prefix, file_ext, time_window, 
+            time_offset, fluor_channel, scattered_channel, ROI_begin, ROI_end,
+            num_bins, evt_offset):
         self.directory = directory
         self.file_prefix = file_prefix
         self.file_ext = file_ext
@@ -31,10 +32,11 @@ class Coincidence:
     def process_fluor_first(self, f_num):
         """Process one netcdf file: Determine number of coincident 
         and accidental ("out of coincidence") pairs. 
-        Coincident pairs assumed to begin with an event on the fluorescence detector.
+        Coincident pairs assumed to begin with an event on fluor detector.
         f_num: the number of the netcdf file to be processed"""
         
-        data = read_data.read_netcdf(self.directory, self.file_prefix + str(f_num) + self.file_ext)
+        data = read_data.read_netcdf(self.directory,
+                self.file_prefix + str(f_num) + self.file_ext)
         size = data['E'].size
         
         #set up result table
@@ -83,10 +85,11 @@ class Coincidence:
     def process_scattered_first(self, f_num):
         """Process one netcdf file: Determine number of coincident 
         and accidental ("out of coincidence") pairs. 
-        Coincident pairs assumed to begin with an event on the scattered detector.
+        Coincident pairs assumed to begin with an event on scattered detector.
         f_num: the number of the netcdf file to be processed"""
         
-        #data = read_data.read_netcdf(self.directory, self.file_prefix + str(f_num) + self.file_ext)
+        #data = read_data.read_netcdf(self.directory, 
+            #self.file_prefix + str(f_num) + self.file_ext)
         data = read_data.read_csv('/home/cwg45/simulate/dump/short.csv')
         size = data['E'].size
         
@@ -118,7 +121,8 @@ class Coincidence:
                 t_1 = t_0 + self.time_offset #skip ahead time_offset seconds
                 k = i
                 while k < size and data['time'][k] <= t_1 + self.time_window:
-                    if data['time'][k] > t_1 and data['channel'][k] == self.fluor_channel \
+                    if data['time'][k] > t_1 \
+                            and data['channel'][k] == self.fluor_channel \
                             and self.ROI_begin <= data['E'][k] <= self.ROI_end:
                         res['out_coincidence'][i] = True
                         break
@@ -136,18 +140,19 @@ class Coincidence:
     def evt_scattered_first(self, f_num, offset_channel):
         """Process one netcdf file: Determine number of coincident 
         and accidental ("out of coincidence") pairs. 
-        Coincident pairs assumed to begin with an event on the scattered detector.
+        Coincident pairs assumed to begin with an event on scattered detector.
         Offset by number of events instead of time
         f_num: the number of the netcdf file to be processed
         offset_channel: channel to use for evt offsets"""
         
-        #data = read_data.read_netcdf(self.directory, self.file_prefix + str(f_num) + self.file_ext)
+        #data = read_data.read_netcdf(self.directory,
+            #self.file_prefix + str(f_num) + self.file_ext)
         data = read_data.read_csv('/home/cwg45/simulate/dump/short.csv')
 
         size = data['E'].size
         
-        addl = np.array(list(zip(data['time'] + data['time'][-1], data['E'], data['channel'])),
-            dtype = data.dtype)       
+        addl = np.array(list(zip(data['time'] + data['time'][-1],
+            data['E'], data['channel'])), dtype = data.dtype)       
         data = np.append(data , addl)
 
         
@@ -197,7 +202,7 @@ class Coincidence:
                 o = k
 
                 while data['time'][k] <= t_1 + self.time_window:
-                     #fluorescence photon must be on fluorescence photon detector
+                     #fluorescence photon must be on fluorescence detector
                      if data['channel'][k] == self.fluor_channel \
                              and self.ROI_begin <= data['E'][k] <= self.ROI_end: 
                          res['out_coincidence'][i] = True #record coincidence
@@ -230,18 +235,20 @@ class Coincidence:
         scattered = np.extract(data['channel'] == self.scattered_channel, data)
 
         #get events in fluorescence region
-        cond = np.logical_and(fluor['E'] > self.ROI_begin, fluor['E'] < self.ROI_end)
+        cond = np.logical_and(fluor['E'] > self.ROI_begin,
+                fluor['E'] < self.ROI_end)
         fluor = np.extract(cond, fluor)
 
         #store fluorescence events in hash tables
-        #really used as hash sets: O(1) add, lookup & remove, associated data is ignored
+        #really used as hash sets: O(1) add, lookup & remove,
+        #associated data is ignored
         coin_ht = {}
         acoin_ht = {}
         for f in fluor:
             coin_ht[int(f[0]/div)] = 1 #1 is just a placeholder value
             acoin_ht[int(f[0]/div)] = 1
 
-        offset = div*2560 #synchrotron period = 2560ns
+        offset = div*128 #synchrotron period = 2560ns
 
         #store coincidence/acoincidence energies
         coin = collections.deque() 
@@ -257,8 +264,10 @@ class Coincidence:
                 acoin_ht.pop(int((s[0] + offset)/div))
 
         #make histograms
-        in_counts = np.histogram(np.array(list(coin)),self.num_bins, (0,2048))[0]
-        out_counts = np.histogram(np.array(list(acoin)),self.num_bins, (0,2048))[0]
+        in_counts = np.histogram(np.array(list(coin)),self.num_bins, 
+                (0,2048))[0]
+        out_counts = np.histogram(np.array(list(acoin)),self.num_bins, 
+                (0,2048))[0]
 
         return (in_counts, out_counts)
 
