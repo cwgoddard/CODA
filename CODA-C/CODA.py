@@ -31,23 +31,23 @@ parser.add_argument("file_ext", help="netCDF file extension, e.g. .nc")
 parser.add_argument("write_directory", help="directory to write output .csv to") 
 parser.add_argument("write_name", help="name of output .csv") 
 
-parser.add_argument("time_window", help="time between hits considered coincidence (s)", 
-        type = float)
+parser.add_argument("time_bin", help="length of time bin (ns)", 
+        type = int)
 parser.add_argument("fluor_begin", help="beginning of fluorescence region in 10s of eV", 
         type = int)
 parser.add_argument("fluor_end", help="end of fluorescence region in 10s of eV", 
         type = int)
-parser.add_argument("time_offset", help="offset to to determine out of coincidence hits (s)", 
-        type = float)
+#parser.add_argument("time_offset", help="offset to to determine out of coincidence hits (s)", 
+#        type = float)
 parser.add_argument("num_bins", help="number of bins in final histogram", type = int) 
 parser.add_argument("fluor_channel", help="channel of fluorescence detector", type = int)
 parser.add_argument("scattered_channel", help="channel of scattered detector", type = int)
 parser.add_argument("num_cores", help="number of cores to parallelize over", type = int)
-parser.add_argument("scattered_first", help="if True, coincident pairs start with scattered photons"
-        , type = ast.literal_eval)
-parser.add_argument("evt_offset", help="number of events to offset by", type = int)
-parser.add_argument("use_evt_offset", help="if true use evt_offset else use time_offset"
-        , type = ast.literal_eval)
+#parser.add_argument("scattered_first", help="if True, coincident pairs start with scattered photons"
+#        , type = ast.literal_eval)
+#parser.add_argument("evt_offset", help="number of events to offset by", type = int)
+#parser.add_argument("use_evt_offset", help="if true use evt_offset else use time_offset"
+#        , type = ast.literal_eval)
 args = parser.parse_args();
 
 #where to get data from
@@ -62,17 +62,17 @@ name = args.write_name
 writedir = args.write_directory
 
 #processing parameters
-time_window = args.time_window
+time_window = args.time_bin
 ROI_begin = args.fluor_begin
 ROI_end = args.fluor_end
-time_offset = args.time_offset
+#time_offset = args.time_offset
 num_bins = args.num_bins
 fluor_channel = args.fluor_channel
 scattered_channel = args.scattered_channel
 num_cores = args.num_cores
-scattered_first = args.scattered_first
-evt_offset = args.evt_offset
-use_evt_offset = args.use_evt_offset
+#scattered_first = args.scattered_first
+#evt_offset = args.evt_offset
+#use_evt_offset = args.use_evt_offset
 
 
 #########################################
@@ -81,17 +81,17 @@ use_evt_offset = args.use_evt_offset
 
 file_end+=1 #python loops are over the range [start, end)
 
-lc = lib_coincidence.Coincidence(directory, file_prefix, file_ext, time_window, time_offset,
-            fluor_channel, scattered_channel, ROI_begin, ROI_end, num_bins, evt_offset)
-
-def process_file(f_num):
+def process_file(f_num, evt_offset):
     """Process one file according to the parameters scattered_first and use_evt_offset"""
-    if use_evt_offset:
-        return lc.evt_scattered_first(f_num, fluor_channel) if scattered_first \
-                else lc.evt_fluor_first(f_num, fluor_channel)
-    else:
-        return lc.process_scattered_first(f_num) if scattered_first \
-                else lc.process_fluor_first(f_num)
+    lc = lib_coincidence.Coincidence(directory, file_prefix, file_ext, time_window, 0,
+        fluor_channel, scattered_channel, ROI_begin, ROI_end, num_bins, 0)
+    #if use_evt_offset:
+    #    return lc.evt_scattered_first(f_num, fluor_channel) if scattered_first \
+    #            else lc.evt_fluor_first(f_num, fluor_channel)
+    #else:
+    #    return lc.process_scattered_first(f_num) if scattered_first \
+    #            else lc.process_fluor_first(f_num)
+    return lc.bin_then_and(f_num, time_window)
 
 #map over all files
 r = range(file_start, file_end)
@@ -99,15 +99,18 @@ r = range(file_start, file_end)
 #reduce all data
 #result is stored in numpy array of tuples (in, out) where in and out are numpy arrays of 
 #size num_bins. Each tuple contains data from one file.
-to_reduce = Parallel(n_jobs = num_cores)(delayed(process_file)(i) for i in r)
+to_reduce = Parallel(n_jobs = num_cores)(delayed(process_file)(i, i) for i in r)
 
 #sum up in coincidence and out of coincidence counts
 #returns tuple of np.array: (in, out)
 def sum_data(acc_in, acc_out, in_cts, out_cts):
     return (acc_in + in_cts, acc_out + out_cts)
 
+#def sum_data(acc_in, acc_out, in_cts, out_cts):
+#    return (np.append(acc_in, np.sum(in_cts)) , np.append(acc_out, np.sum(out_cts)))
+
 #sum up results
-totals = reduce(lambda x, y: sum_data(*x+y), to_reduce) 
+totals = reduce(lambda x, y: sum_data(*x+y), to_reduce, (0,0)) 
 
 def write_totals(totals):
     """Write out a .csv file of the summed distribution.
@@ -131,13 +134,13 @@ def write_log():
             str(file_start) + ' to ' + str(file_end) + '\n')
     f.write('\n')
     f.write('Runtime parameters: \n')
-    f.write('time window: ' + '{:.3e}'.format(time_window) + '\n')
-    f.write('time offset: ' + '{:.3e}'.format(time_offset) + '\n')
+    f.write('time bin: ' + '{:.3e}'.format(time_window) + '\n')
+    #f.write('time offset: ' + '{:.3e}'.format(time_offset) + '\n')
     f.write('fluorescence region: [' + str(ROI_begin) + ',' + str(ROI_end) + ']\n')
     f.write('scattered channel: ' + str(scattered_channel) + '\n')
     f.write('fluorescence channel: ' + str(fluor_channel) + '\n')
     f.write('number of histogram bins: ' + str(num_bins) + '\n')
-    f.write('scattered_first: ' + str(scattered_first) + '\n')
+    #f.write('scattered_first: ' + str(scattered_first) + '\n')
 
     f.close()
 
