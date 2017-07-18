@@ -225,8 +225,12 @@ class Coincidence:
         div = int(bin_width/20)
 
         #read in data
-        data = read_data.read_netcdf_raw(self.directory,
-                self.file_prefix + str(f_num) + self.file_ext)
+        try:
+            data = read_data.read_netcdf_raw(self.directory,
+                    self.file_prefix + str(f_num) + self.file_ext)
+        except:
+            return ((np.zeros(self.num_bins, dtype=np.int32), np.zeros(self.num_bins, 
+                dtype = np.int32)), 0)
 
         #get fluorescence channel events
         fluor = np.extract(data['channel'] == self.fluor_channel, data)
@@ -269,6 +273,6 @@ class Coincidence:
         out_counts = np.histogram(np.array(list(acoin)),self.num_bins, 
                 (0,2048))[0]
 
-        return (in_counts, out_counts)
+        return ((in_counts, out_counts), fluor.size)
 
 

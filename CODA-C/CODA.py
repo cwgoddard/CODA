@@ -110,7 +110,8 @@ def sum_data(acc_in, acc_out, in_cts, out_cts):
 #    return (np.append(acc_in, np.sum(in_cts)) , np.append(acc_out, np.sum(out_cts)))
 
 #sum up results
-totals = reduce(lambda x, y: sum_data(*x+y), to_reduce, (0,0)) 
+totals = reduce(lambda x, y: sum_data(*x+y[0]), to_reduce, (0,0)) 
+fluor_cts = reduce(lambda x, y: x + y[1], to_reduce, 0)
 
 def write_totals(totals):
     """Write out a .csv file of the summed distribution.
@@ -123,6 +124,10 @@ def write_totals(totals):
         write_file.write(str(totals[0][i]) + ',' + str(totals[1][i]) + '\n')
     write_file.close()
 
+    fluor = open(writedir + name + '-fluor.csv', 'w')
+    fluor.write(str(fluor_cts))
+    fluor.close()
+
 def write_log():
     """write a log file for the run"""
 
@@ -131,7 +136,7 @@ def write_log():
     f.write('Log file for ' + writedir + name + '.csv \n')
     f.write('\n')
     f.write('Running on folder ' + directory + ', files ' + 
-            str(file_start) + ' to ' + str(file_end) + '\n')
+            str(file_start) + ' to ' + str(file_end - 1) + '\n')
     f.write('\n')
     f.write('Runtime parameters: \n')
     f.write('time bin: ' + '{:.3e}'.format(time_window) + '\n')
