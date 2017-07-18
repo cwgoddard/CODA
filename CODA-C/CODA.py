@@ -132,7 +132,7 @@ def write_log():
     """write a log file for the run"""
 
     f = open(writedir + name + '.log', 'w')
-    f.write('OSPS Log File \n')
+    f.write('CODA Log File \n')
     f.write('Log file for ' + writedir + name + '.csv \n')
     f.write('\n')
     f.write('Running on folder ' + directory + ', files ' + 
