@@ -1,6 +1,0 @@
-source /opt/rh/python33/enable
-export PYTHONPATH=/nfs/opt/python3.3/packages${PYTHONPATH:+:${PYTHONPATH}}
-export PYTHONPATH=/home/cwg45/local/lib/python3.3/site-packages${PYTHONPATH:+:${PYTHONPATH}}
-
-python /home/cwg45/CODA/CODA-C/CODA.py /nfs/chess/raw/2017-1/f2/franck-580-1/a31b/7/list/ \
-list_ 3828 3932 .nc /home/cwg45/OSPS-python/ s3-720 720 797 916 45 0 1 12
