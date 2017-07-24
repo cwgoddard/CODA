@@ -9,7 +9,7 @@ import sys
 import random
 import collections
 
-sys.path.append('./..')
+sys.path.append('/home/cwg45/CODA/')
 import read_data
 
 class Coincidence:
@@ -221,6 +221,8 @@ class Coincidence:
 
     def bin_then_and(self, f_num, bin_width):
 
+        print(f_num)
+
         #binning parameter
         div = int(bin_width/20)
 
@@ -250,7 +252,7 @@ class Coincidence:
         acoin_ht = {}
         for f in fluor:
             coin_ht[int(f[0]/div)] = 1 #1 is just a placeholder value
-            acoin_ht[int(f[0]/div)] = 1
+            acoin_ht[int(f[0]/div)] = 1 #all that matters is the key
 
         offset = div*128 #synchrotron period = 2560ns
 
@@ -265,7 +267,7 @@ class Coincidence:
                 coin_ht.pop(int(s[0]/div)) #remove fluor event -- no duplicates
             if int((s[0] + offset)/div) in acoin_ht:
                 acoin.append(s[1]) #record acoincidence 
-                acoin_ht.pop(int((s[0] + offset)/div))
+                acoin_ht.pop(int(s[0] + offset) / div)
 
         #make histograms
         in_counts = np.histogram(np.array(list(coin)),self.num_bins, 
