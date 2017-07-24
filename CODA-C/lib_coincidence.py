@@ -267,7 +267,7 @@ class Coincidence:
                 coin_ht.pop(int(s[0]/div)) #remove fluor event -- no duplicates
             if int((s[0] + offset)/div) in acoin_ht:
                 acoin.append(s[1]) #record acoincidence 
-                acoin_ht.pop(int(s[0] + offset) / div)
+                acoin_ht.pop(int((s[0] + offset) / div))
 
         #make histograms
         in_counts = np.histogram(np.array(list(coin)),self.num_bins, 
