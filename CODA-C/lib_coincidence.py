@@ -278,3 +278,80 @@ class Coincidence:
         return ((in_counts, out_counts), fluor.size)
 
 
+    def inner_bootstrap(self, data, bin_width):
+
+        #binning parameter
+        div = int(bin_width/20)
+
+        #get fluorescence channel events
+        fluor = np.extract(data['channel'] == self.fluor_channel, data)
+
+        #get scattered channel events
+        scattered = np.extract(data['channel'] == self.scattered_channel, data)
+
+        #get events in fluorescence region
+        cond = np.logical_and(fluor['E'] > self.ROI_begin,
+                fluor['E'] < self.ROI_end)
+        fluor = np.extract(cond, fluor)
+        
+        #get a random sample 
+        fluor = np.random.choice(fluor, fluor.size, replace=True)
+
+
+        #store fluorescence events in hash tables
+        #really used as hash sets: O(1) add, lookup & remove,
+        #associated data is ignored
+        coin_ht = {}
+        acoin_ht = {}
+        for f in fluor:
+            if int(f[0]/div) in coin_ht:
+                coin_ht[int(f[0]/div)] += 1
+                acoin_ht[int(f[0]/div)] += 1
+            else:
+                coin_ht[int(f[0]/div)] = 1 
+                acoin_ht[int(f[0]/div)] = 1
+
+
+        offset = div*128 #synchrotron period = 2560ns
+
+        #store coincidence/acoincidence energies
+        coin = collections.deque() 
+        acoin = collections.deque() 
+
+        #look for coincident/acoincident pairs
+        for s in scattered:
+            if int(s[0]/div) in coin_ht: 
+                coin.append(s[1]) #record coincidence
+                coin_ht[int(s[0]/div)] -= 1
+                if coin_ht[int(s[0]/div)] <= 0 
+                    coin_ht.pop(int(s[0]/div)) #remove fluor event
+            if int((s[0] + offset)/div) in acoin_ht:
+                acoin.append(s[1]) #record acoincidence 
+                acoin_ht[int((s[0] + offset)/div)] -= 1
+                if acoin_ht[int((s[0]+offset)/div)] <= 0 
+                    acoin_ht.pop(int((s[0] + offset) / div))
+
+        #make histograms
+        in_counts = np.histogram(np.array(list(coin)),self.num_bins, 
+                (0,2048))[0]
+        out_counts = np.histogram(np.array(list(acoin)),self.num_bins, 
+                (0,2048))[0]
+
+        return ((in_counts, out_counts), fluor.size)
+
+
+    def bootstrap(self, f_num, bin_width, num_samples):
+        #read in data
+        try:
+            data = read_data.read_netcdf_raw(self.directory,
+                    self.file_prefix + str(f_num) + self.file_ext)
+        except:
+            return ((np.zeros(self.num_bins, dtype=np.int32), np.zeros(self.num_bins, 
+                dtype = np.int32)), 0)
+
+        tbl = {}
+        for b_id in range(0,num_samples):
+            res = inner_bootstrap(data, bin_width)
+            tbl[b_id] = res
+
+        return tbl
