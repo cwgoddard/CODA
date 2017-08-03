@@ -323,12 +323,12 @@ class Coincidence:
             if int(s[0]/div) in coin_ht: 
                 coin.append(s[1]) #record coincidence
                 coin_ht[int(s[0]/div)] -= 1
-                if coin_ht[int(s[0]/div)] <= 0 
+                if coin_ht[int(s[0]/div)] <= 0:
                     coin_ht.pop(int(s[0]/div)) #remove fluor event
             if int((s[0] + offset)/div) in acoin_ht:
                 acoin.append(s[1]) #record acoincidence 
                 acoin_ht[int((s[0] + offset)/div)] -= 1
-                if acoin_ht[int((s[0]+offset)/div)] <= 0 
+                if acoin_ht[int((s[0]+offset)/div)] <= 0:
                     acoin_ht.pop(int((s[0] + offset) / div))
 
         #make histograms
@@ -342,6 +342,7 @@ class Coincidence:
 
     def bootstrap(self, f_num, bin_width, num_samples):
         #read in data
+        print(f_num)
         try:
             data = read_data.read_netcdf_raw(self.directory,
                     self.file_prefix + str(f_num) + self.file_ext)
@@ -349,9 +350,9 @@ class Coincidence:
             return ((np.zeros(self.num_bins, dtype=np.int32), np.zeros(self.num_bins, 
                 dtype = np.int32)), 0)
 
-        tbl = {}
+        tbl = []
         for b_id in range(0,num_samples):
-            res = inner_bootstrap(data, bin_width)
-            tbl[b_id] = res
+            res = self.inner_bootstrap(data, bin_width)
+            tbl.append(res)
 
         return tbl

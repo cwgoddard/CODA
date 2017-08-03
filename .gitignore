@@ -2,3 +2,6 @@ CODA-C/__pycache__/
 CODA-C/submit
 __pycache__
 submit
+*.jpg
+*.csv
+*.fig

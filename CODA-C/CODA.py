@@ -91,7 +91,7 @@ def process_file(f_num, evt_offset):
     #else:
     #    return lc.process_scattered_first(f_num) if scattered_first \
     #            else lc.process_fluor_first(f_num)
-    return lc.bin_then_and(f_num, time_window)
+    return lc.bootstrap(f_num, time_window, 1000)
 
 #map over all files
 r = range(file_start, file_end)
@@ -110,8 +110,37 @@ def sum_data(acc_in, acc_out, in_cts, out_cts):
 #    return (np.append(acc_in, np.sum(in_cts)) , np.append(acc_out, np.sum(out_cts)))
 
 #sum up results
-totals = reduce(lambda x, y: sum_data(*x+y[0]), to_reduce, (0,0)) 
-fluor_cts = reduce(lambda x, y: x + y[1], to_reduce, 0)
+#totals = reduce(lambda x, y: sum_data(*x+y[0]), to_reduce, (0,0)) 
+#fluor_cts = reduce(lambda x, y: x + y[1], to_reduce, 0)
+
+def add(dat, val):
+    
+    if dat is None:
+        return val
+    else:
+        (d1, d2), (v1, v2) = (dat, val)
+        (d1i, d1o) = d1
+        (v1i, v1o) = v1
+        return ((d1i + v1i, d1o + v1o), d2+v2)
+
+num_bootstrap = 1000
+
+dat = [None] * num_bootstrap
+for f in to_reduce:
+    for idx, val in enumerate(f):
+        dat[idx] = add(dat[idx], val)
+
+def write_bootstrap(data):
+    write_file = open(writedir + name + '.csv', 'w')
+    for s in data:
+        (t, _) = s
+        (i, o) = t
+        sub = i-o
+        write_file.write(','.join([str(x) for x in sub])+'\n')
+    write_file.close()
+
+write_bootstrap(dat)
+sys.exit(0)
 
 def write_totals(totals):
     """Write out a .csv file of the summed distribution.
