@@ -299,20 +299,20 @@ class Coincidence:
 
 
         #store fluorescence events in hash tables
-        #really used as hash sets: O(1) add, lookup & remove,
-        #associated data is ignored
+        #increment value by 1 for each event (bootstrapping allows duplicates)
         coin_ht = {}
         acoin_ht = {}
         for f in fluor:
+            #if the key is already associated with a value, just increment
             if int(f[0]/div) in coin_ht:
                 coin_ht[int(f[0]/div)] += 1
                 acoin_ht[int(f[0]/div)] += 1
-            else:
+            else: #otherwise, initialize the key to 1
                 coin_ht[int(f[0]/div)] = 1 
                 acoin_ht[int(f[0]/div)] = 1
 
 
-        offset = div*128 #synchrotron period = 2560ns
+        offset = div*128 #synchrotron period = 2560ns/20ns*bin^-1 = 128 bins
 
         #store coincidence/acoincidence energies
         coin = collections.deque() 
@@ -322,9 +322,9 @@ class Coincidence:
         for s in scattered:
             if int(s[0]/div) in coin_ht: 
                 coin.append(s[1]) #record coincidence
-                coin_ht[int(s[0]/div)] -= 1
+                coin_ht[int(s[0]/div)] -= 1 #subtract one fluor event
                 if coin_ht[int(s[0]/div)] <= 0:
-                    coin_ht.pop(int(s[0]/div)) #remove fluor event
+                    coin_ht.pop(int(s[0]/div)) #remove fluor event if there are none left
             if int((s[0] + offset)/div) in acoin_ht:
                 acoin.append(s[1]) #record acoincidence 
                 acoin_ht[int((s[0] + offset)/div)] -= 1
@@ -343,6 +343,8 @@ class Coincidence:
     def bootstrap(self, f_num, bin_width, num_samples):
         #read in data
         print(f_num)
+
+        #read in data, or return 0's if the file is broken
         try:
             data = read_data.read_netcdf_raw(self.directory,
                     self.file_prefix + str(f_num) + self.file_ext)
@@ -350,9 +352,12 @@ class Coincidence:
             return ((np.zeros(self.num_bins, dtype=np.int32), np.zeros(self.num_bins, 
                 dtype = np.int32)), 0)
 
-        tbl = []
+        #store bootstrap results
+        tbl = collections.deque()
         for b_id in range(0,num_samples):
+            #perform one measurement
             res = self.inner_bootstrap(data, bin_width)
+            #store results
             tbl.append(res)
 
         return tbl
