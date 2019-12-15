@@ -59,26 +59,35 @@ class Coincidence:
                         res['in_coincidence'][k] = True #record coincidence
                         break
                     k = k + 1
-                    
-        #determine accidentals           
-        for i in range(0,size):
-            if data['channel'][i] == self.fluor_channel \
-                   and self.ROI_begin <= data['E'][i] <= self.ROI_end:
-                t_0 = data['time'][i]
-                t_1 = t_0 + self.time_offset #skip ahead time_offset seconds
-                k = i
-                while k < size and data['time'][k] <= t_1 + self.time_window:
-                    if data['time'][k] >= t_1 and \
-                            data['channel'][k] == self.scattered_channel:
-                        res['out_coincidence'][k] = True
-                        break
-                    k = k + 1  
-        #make histograms
+         
         in_counts = np.histogram(
                 res['E'][res['in_coincidence'] == True],self.num_bins)[0]
-        out_counts = np.histogram(
+           
+        out_c = np.zeros(self.num_bins)
+        #determine accidentals           
+        for j in range(1,7): 
+            res = np.array(list(zip(data['E'], np.zeros(size), np.zeros(size))),
+            dtype = {'names':['E', 'in_coincidence', 'out_coincidence'],
+                     'formats':['int32', bool, bool]})
+
+            for i in range(0,size):
+                if data['channel'][i] == self.fluor_channel \
+                       and self.ROI_begin <= data['E'][i] <= self.ROI_end:
+                    t_0 = data['time'][i]
+                    t_1 = t_0 + self.time_offset*j 
+                    k = i
+                    while k < size and data['time'][k] <= t_1 + self.time_window:
+                        if data['time'][k] >= t_1 and \
+                                data['channel'][k] == self.scattered_channel:
+                            res['out_coincidence'][k] = True
+                            break
+                        k = k + 1
+            out_c +=  np.histogram(
                 res['E'][res['out_coincidence'] == True],self.num_bins)[0]
-            
+ 
+        #make histograms
+        out_counts = np.zeros(self.num_bins)
+           
         return (in_counts, out_counts)
      
 
@@ -225,7 +234,7 @@ class Coincidence:
 
         #binning parameter
         div = int(bin_width/20)
-
+	
         #read in data
         try:
             data = read_data.read_netcdf_raw(self.directory,
@@ -254,24 +263,36 @@ class Coincidence:
             coin_ht[int(f[0]/div)] = 1 #1 is just a placeholder value
             acoin_ht[int(f[0]/div)] = 1 #all that matters is the key
 
-        offset = div*128 #synchrotron period = 2560ns
+        offset = div*95. #synchrotron period = 2560ns
 
         #store coincidence/acoincidence energies
         coin = collections.deque() 
         acoin = collections.deque() 
+        listofaccidentals = []	
 
         #look for coincident/acoincident pairs
-        for s in scattered:
-            if int(s[0]/div) in coin_ht: 
-                coin.append(s[1]) #record coincidence
-                coin_ht.pop(int(s[0]/div)) #remove fluor event -- no duplicates
-            if int((s[0] + offset)/div) in acoin_ht:
-                acoin.append(s[1]) #record acoincidence 
-                acoin_ht.pop(int((s[0] + offset) / div))
+        for i in range(1,11):
+            #acoin_ht = {}
+            #for f in fluor:
+            #    acoin_ht[int(f[0]/div)] = 1 #all that matters is the key
+            for s in scattered:
+                if i == 1:
+                    if int(s[0]/div) in coin_ht: 
+                        coin.append(s[1]) #record coincidence
+                        coin_ht.pop(int(s[0]/div)) #remove fluor event -- no duplicates
+                if int((s[0] + offset*i)/div) in acoin_ht:
+                    acoin.append(s[1]) #record acoincidence 
+                    acoin_ht.pop(int((s[0] + offset*i) / div))
+            temp = np.histogram(np.array(list(acoin)),self.num_bins,(0,2048))[0]
+            listofaccidentals.append(sum(temp)-sum(listofaccidentals))
 
         #make histograms
         in_counts = np.histogram(np.array(list(coin)),self.num_bins, 
                 (0,2048))[0]
+        #in_counts = np.empty(self.num_bins)
+        #in_counts.fill(np.std(listofaccidentals))
+        #listofaccidentals = np.array(listofaccidentals)
+        #in_counts = np.append([np.std(listofaccidentals)],np.zeros(99))
         out_counts = np.histogram(np.array(list(acoin)),self.num_bins, 
                 (0,2048))[0]
 
